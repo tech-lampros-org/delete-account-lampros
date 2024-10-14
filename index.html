@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lampros App - OTP and Delete Account</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        form {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        label, input {
+            display: block;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        input[type="submit"] {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+        }
+        input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Lampros App</h1>
+
+    <!-- Request OTP Form -->
+    <form id="requestOtpForm">
+        <h2>Request OTP</h2>
+        <label for="phone">Phone Number:</label>
+        <input type="text" id="phone" name="phone" placeholder="+917994107442" required>
+        <input type="submit" value="Request OTP">
+    </form>
+
+    <!-- Verify OTP Form -->
+    <form id="verifyOtpForm">
+        <h2>Verify OTP</h2>
+        <label for="otp">OTP:</label>
+        <input type="text" id="otp" name="otp" required>
+        <input type="submit" value="Verify OTP">
+    </form>
+
+    <!-- Delete Account Form -->
+    <form id="deleteAccountForm">
+        <h2>Delete Account</h2>
+        <label for="token">Token (for authorization):</label>
+        <input type="text" id="token" name="token" readonly required>
+        <input type="submit" value="Delete Account">
+    </form>
+
+    <script>
+        const baseUrl = 'https://lampros-backend.vercel.app/api/user';
+        let token = '';
+
+        // Request OTP
+        document.getElementById('requestOtpForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const phone = document.getElementById('phone').value;
+            try {
+                const response = await fetch(`${baseUrl}/request-otp`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ phone })
+                });
+                const data = await response.json();
+                alert(data.message || 'OTP Requested');
+            } catch (error) {
+                alert('Error requesting OTP');
+                console.error(error);
+            }
+        });
+
+        // Verify OTP and Get Token
+        document.getElementById('verifyOtpForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const otp = document.getElementById('otp').value;
+            try {
+                const response = await fetch(`${baseUrl}/verify-otp`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ otp })
+                });
+                const data = await response.json();
+                
+                if (data.token) {
+                    token = data.token; // Store the token
+                    document.getElementById('token').value = token; // Show the token in the delete form
+                    alert('OTP Verified. Token received.');
+                } else {
+                    alert('OTP Verification failed.');
+                }
+            } catch (error) {
+                alert('Error verifying OTP');
+                console.error(error);
+            }
+        });
+
+        // Delete Account
+        document.getElementById('deleteAccountForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const confirmation = confirm('Are you sure you want to delete your account? This action cannot be undone.');
+            if (confirmation && token) {
+                try {
+                    const response = await fetch(`${baseUrl}/delete`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    const data = await response.json();
+                    alert(data.message || 'Account Deleted');
+                } catch (error) {
+                    alert('Error deleting account');
+                    console.error(error);
+                }
+            } else {
+                alert('Token not available or deletion cancelled.');
+            }
+        });
+    </script>
+</body>
+</html>
