@@ -5,86 +5,201 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lampros App - OTP and Delete Account</title>
     <style>
+        /* Reset some default styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            max-width: 600px;
-            margin: 0 auto;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             padding: 20px;
         }
-        h1 {
-            text-align: center;
-            color: #333;
-        }
-        form {
-            margin-bottom: 20px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        label, input {
-            display: block;
+
+        .container {
+            background-color: #fff;
+            max-width: 600px;
             width: 100%;
-            margin-bottom: 10px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
         }
+
+        .header {
+            background-color: #007bff;
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2em;
+        }
+
+        .form-section {
+            padding: 20px;
+        }
+
+        .form-section h2 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.5em;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        input[type="submit"] {
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+        }
+
         input[type="submit"] {
             background-color: #007bff;
             color: #fff;
             border: none;
-            padding: 10px;
             cursor: pointer;
+            transition: background-color 0.3s ease;
         }
+
         input[type="submit"]:hover {
             background-color: #0056b3;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.5em;
+            }
+
+            .form-section h2 {
+                font-size: 1.2em;
+            }
+        }
+
+        /* Additional Styling */
+        .alert {
+            padding: 15px;
+            background-color: #f44336; /* Red */
+            color: white;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .success {
+            background-color: #4CAF50; /* Green */
+        }
+
+        .hidden {
+            display: none;
         }
     </style>
 </head>
 <body>
-    <h1>Lampros App</h1>
+    <div class="container">
+        <div class="header">
+            <h1>Lampros App</h1>
+        </div>
 
-    <!-- Request OTP Form -->
-    <form id="requestOtpForm">
-        <h2>Request OTP</h2>
-        <label for="phone">Phone Number:</label>
-        <input type="text" id="phone" name="phone" placeholder="+917994107442" required>
-        <input type="submit" value="Request OTP">
-    </form>
+        <div class="form-section">
+            <!-- Request OTP Form -->
+            <form id="requestOtpForm">
+                <h2>Request OTP</h2>
+                <label for="phone">Phone Number:</label>
+                <input type="text" id="phone" name="phone" placeholder="+917994107442" required>
+                <input type="submit" value="Request OTP">
+            </form>
 
-    <!-- Verify OTP Form -->
-    <form id="verifyOtpForm">
-        <h2>Verify OTP</h2>
-        <label for="otp">OTP:</label>
-        <input type="text" id="otp" name="otp" required>
-        <input type="submit" value="Verify OTP">
-    </form>
+            <!-- Verify OTP Form -->
+            <form id="verifyOtpForm">
+                <h2>Verify OTP</h2>
+                <label for="verifyPhone">Phone Number:</label>
+                <input type="text" id="verifyPhone" name="verifyPhone" placeholder="+917994107442" required>
+                <label for="otp">OTP:</label>
+                <input type="text" id="otp" name="otp" required>
+                <input type="submit" value="Verify OTP">
+            </form>
 
-    <!-- Delete Account Form -->
-    <form id="deleteAccountForm">
-        <h2>Delete Account</h2>
-        <label for="token">Token (for authorization):</label>
-        <input type="text" id="token" name="token" readonly required>
-        <input type="submit" value="Delete Account">
-    </form>
+            <!-- Delete Account Form -->
+            <form id="deleteAccountForm">
+                <h2>Delete Account</h2>
+                <label for="token">Token (for authorization):</label>
+                <input type="text" id="token" name="token" readonly required>
+                <input type="submit" value="Delete Account">
+            </form>
+        </div>
+    </div>
 
     <script>
         const baseUrl = 'https://lampros-backend.vercel.app/api/user';
         let token = '';
 
+        // Function to display alerts
+        function showAlert(message, type = 'error') {
+            let alertBox = document.createElement('div');
+            alertBox.className = type === 'success' ? 'alert success' : 'alert';
+            alertBox.innerText = message;
+            document.querySelector('.form-section').prepend(alertBox);
+            alertBox.style.display = 'block';
+            setTimeout(() => {
+                alertBox.remove();
+            }, 3000);
+        }
+
         // Request OTP
         document.getElementById('requestOtpForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const phone = document.getElementById('phone').value;
+            const phone = document.getElementById('phone').value.trim();
+            if (!phone) {
+                showAlert('Please enter a valid phone number.');
+                return;
+            }
             try {
                 const response = await fetch(`${baseUrl}/request-otp`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ phone })
+                    body: JSON.stringify({ phoneNumber: phone })
                 });
                 const data = await response.json();
-                alert(data.message || 'OTP Requested');
+                if (response.ok) {
+                    showAlert(data.message || 'OTP Requested', 'success');
+                } else {
+                    showAlert(data.message || 'Failed to request OTP.');
+                }
             } catch (error) {
-                alert('Error requesting OTP');
+                showAlert('Error requesting OTP.');
                 console.error(error);
             }
         });
@@ -92,26 +207,33 @@
         // Verify OTP and Get Token
         document.getElementById('verifyOtpForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const otp = document.getElementById('otp').value;
+            const phone = document.getElementById('verifyPhone').value.trim();
+            const otp = document.getElementById('otp').value.trim();
+
+            if (!phone || !otp) {
+                showAlert('Please enter both phone number and OTP.');
+                return;
+            }
+
             try {
                 const response = await fetch(`${baseUrl}/verify-otp`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ otp })
+                    body: JSON.stringify({ phoneNumber: phone, otp })
                 });
                 const data = await response.json();
                 
-                if (data.token) {
+                if (response.ok && data.token) {
                     token = data.token; // Store the token
                     document.getElementById('token').value = token; // Show the token in the delete form
-                    alert('OTP Verified. Token received.');
+                    showAlert('OTP Verified. Token received.', 'success');
                 } else {
-                    alert('OTP Verification failed.');
+                    showAlert(data.message || 'OTP Verification failed.');
                 }
             } catch (error) {
-                alert('Error verifying OTP');
+                showAlert('Error verifying OTP.');
                 console.error(error);
             }
         });
@@ -119,8 +241,12 @@
         // Delete Account
         document.getElementById('deleteAccountForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (!token) {
+                showAlert('Token not available. Please verify OTP first.');
+                return;
+            }
             const confirmation = confirm('Are you sure you want to delete your account? This action cannot be undone.');
-            if (confirmation && token) {
+            if (confirmation) {
                 try {
                     const response = await fetch(`${baseUrl}/delete`, {
                         method: 'DELETE',
@@ -130,13 +256,16 @@
                         }
                     });
                     const data = await response.json();
-                    alert(data.message || 'Account Deleted');
+                    if (response.ok) {
+                        showAlert(data.message || 'Account Deleted', 'success');
+                        // Optionally, redirect the user or reset the forms
+                    } else {
+                        showAlert(data.message || 'Error deleting account.');
+                    }
                 } catch (error) {
-                    alert('Error deleting account');
+                    showAlert('Error deleting account.');
                     console.error(error);
                 }
-            } else {
-                alert('Token not available or deletion cancelled.');
             }
         });
     </script>
