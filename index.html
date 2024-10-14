@@ -123,6 +123,20 @@
         .hidden {
             display: none;
         }
+
+        /* Transition for smooth show/hide */
+        .form-section form {
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .form-section form.hidden {
+            opacity: 0;
+            transform: translateY(-20px);
+            height: 0;
+            overflow: hidden;
+            padding: 0;
+            margin: 0;
+        }
     </style>
 </head>
 <body>
@@ -132,6 +146,9 @@
         </div>
 
         <div class="form-section">
+            <!-- Alert Container -->
+            <div id="alert-container"></div>
+
             <!-- Request OTP Form -->
             <form id="requestOtpForm">
                 <h2>Request OTP</h2>
@@ -141,17 +158,17 @@
             </form>
 
             <!-- Verify OTP Form -->
-            <form id="verifyOtpForm">
+            <form id="verifyOtpForm" class="hidden">
                 <h2>Verify OTP</h2>
-                <label for="verifyPhone">Phone Number:</label>
-                <input type="text" id="verifyPhone" name="verifyPhone" placeholder="+917994107442" required>
+                <!-- Hidden Phone Number -->
+                <input type="hidden" id="hiddenPhone" name="hiddenPhone">
                 <label for="otp">OTP:</label>
                 <input type="text" id="otp" name="otp" required>
                 <input type="submit" value="Verify OTP">
             </form>
 
             <!-- Delete Account Form -->
-            <form id="deleteAccountForm">
+            <form id="deleteAccountForm" class="hidden">
                 <h2>Delete Account</h2>
                 <label for="token">Token (for authorization):</label>
                 <input type="text" id="token" name="token" readonly required>
@@ -163,27 +180,48 @@
     <script>
         const baseUrl = 'https://lampros-backend.vercel.app/api/user';
         let token = '';
+        let phoneNumber = '';
 
         // Function to display alerts
         function showAlert(message, type = 'error') {
-            let alertBox = document.createElement('div');
+            const alertContainer = document.getElementById('alert-container');
+            const alertBox = document.createElement('div');
             alertBox.className = type === 'success' ? 'alert success' : 'alert';
             alertBox.innerText = message;
-            document.querySelector('.form-section').prepend(alertBox);
+            alertContainer.appendChild(alertBox);
             alertBox.style.display = 'block';
+            // Remove the alert after 3 seconds
             setTimeout(() => {
                 alertBox.remove();
             }, 3000);
         }
 
+        // Function to show a form and hide others
+        function showForm(formId) {
+            const forms = document.querySelectorAll('.form-section form');
+            forms.forEach(form => {
+                if (form.id === formId) {
+                    form.classList.remove('hidden');
+                } else {
+                    form.classList.add('hidden');
+                }
+            });
+        }
+
+        // Initially show only the Request OTP form
+        showForm('requestOtpForm');
+
         // Request OTP
         document.getElementById('requestOtpForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const phone = document.getElementById('phone').value.trim();
+            const phoneInput = document.getElementById('phone');
+            const phone = phoneInput.value.trim();
+
             if (!phone) {
                 showAlert('Please enter a valid phone number.');
                 return;
             }
+
             try {
                 const response = await fetch(`${baseUrl}/request-otp`, {
                     method: 'POST',
@@ -194,7 +232,13 @@
                 });
                 const data = await response.json();
                 if (response.ok) {
+                    phoneNumber = phone; // Store the phone number
+                    document.getElementById('hiddenPhone').value = phoneNumber; // Set hidden phone
                     showAlert(data.message || 'OTP Requested', 'success');
+                    // Transition to Verify OTP form after a short delay
+                    setTimeout(() => {
+                        showForm('verifyOtpForm');
+                    }, 1000);
                 } else {
                     showAlert(data.message || 'Failed to request OTP.');
                 }
@@ -207,11 +251,12 @@
         // Verify OTP and Get Token
         document.getElementById('verifyOtpForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const phone = document.getElementById('verifyPhone').value.trim();
-            const otp = document.getElementById('otp').value.trim();
+            const otpInput = document.getElementById('otp');
+            const otp = otpInput.value.trim();
+            const hiddenPhone = document.getElementById('hiddenPhone').value;
 
-            if (!phone || !otp) {
-                showAlert('Please enter both phone number and OTP.');
+            if (!otp) {
+                showAlert('Please enter the OTP.');
                 return;
             }
 
@@ -221,7 +266,7 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ phoneNumber: phone, otp })
+                    body: JSON.stringify({ phoneNumber: hiddenPhone, otp })
                 });
                 const data = await response.json();
                 
@@ -229,6 +274,10 @@
                     token = data.token; // Store the token
                     document.getElementById('token').value = token; // Show the token in the delete form
                     showAlert('OTP Verified. Token received.', 'success');
+                    // Transition to Delete Account form after a short delay
+                    setTimeout(() => {
+                        showForm('deleteAccountForm');
+                    }, 1000);
                 } else {
                     showAlert(data.message || 'OTP Verification failed.');
                 }
@@ -258,7 +307,17 @@
                     const data = await response.json();
                     if (response.ok) {
                         showAlert(data.message || 'Account Deleted', 'success');
-                        // Optionally, redirect the user or reset the forms
+                        // Optionally, reset the forms or redirect the user
+                        setTimeout(() => {
+                            // Reset all forms and show the initial form
+                            document.getElementById('requestOtpForm').reset();
+                            document.getElementById('verifyOtpForm').reset();
+                            document.getElementById('deleteAccountForm').reset();
+                            document.getElementById('token').value = '';
+                            phoneNumber = '';
+                            token = '';
+                            showForm('requestOtpForm');
+                        }, 2000);
                     } else {
                         showAlert(data.message || 'Error deleting account.');
                     }
